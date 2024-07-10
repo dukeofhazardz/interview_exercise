@@ -20,7 +20,7 @@ export function getLocalConfig(): Configuration {
     database: {
       connectionString: getEnv(
         'MONGO_CONNECTION_STRING',
-        'mongodb://localadmin:localadmin@127.0.0.1:27017/unibuddy-chat-local?authSource=admin',
+        'mongodb://localadmin:localadmin@127.0.0.1:28017/unibuddy-chat-local?authSource=admin',
       ),
     },
     userService: {
@@ -41,7 +41,8 @@ export function getTestConfiguration(): TestConfiguration {
   return {
     database: {
       connectionString:
-        'mongodb://localadmin:localadmin@127.0.0.1:27017/unibuddy-chat-local?authSource=admin',
+        'mongodb://localadmin:localadmin@127.0.0.1:28017/unibuddy-chat-local?authSource=admin',
     },
+    // Updated port to `28017` to match docker-compose.yaml
   };
 }

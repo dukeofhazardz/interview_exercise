@@ -21,7 +21,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: localadmin
       MONGO_DB_NAME: unibuddy-chat-local
     ports:
-      - 27017:27017
+      - 28017:27017  # Changed host port to 28017 to avoid conflicts and ensure authentication data is accessible to the host machine
     healthcheck:
       test:
         [
