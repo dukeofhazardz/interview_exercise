@@ -14,6 +14,8 @@ export enum Action {
   resolveMessage = 'resolveMessage',
   pinMessage = 'pinMessage',
   createPoll = 'createPoll',
+  addTags = 'addTags',
+  updateTags = 'updateTags',
 }
 
 export enum AccountRole {

@@ -29,14 +29,6 @@ type Reaction {
   userIds: [String!]!
 }
 
-type ChatConversation {
-  id: ID!
-  unreadMessageCount: Int
-  lastMessage: ChatMessage
-  pinnedMessages: [ChatMessage!]!
-  pinnedMessagesCount: Int!
-}
-
 type UserField {
   id: String
 }
@@ -107,6 +99,7 @@ type ChatMessage {
   richContent: RichMessageContent
   reactions: [Reaction!]
   isSenderBlocked: Boolean
+  tags: [String!]
 }
 
 """
@@ -117,6 +110,14 @@ scalar DateTime
 type PaginatedChatMessages {
   messages: [ChatMessage!]!
   hasMore: Boolean!
+}
+
+type ChatConversation {
+  id: ID!
+  unreadMessageCount: Int
+  lastMessage: ChatMessage
+  pinnedMessages: [ChatMessage!]!
+  pinnedMessagesCount: Int!
 }
 
 type LastRead {
@@ -137,6 +138,7 @@ type Query {
   getChatConversation(id: String!): ChatConversation!
   getMessagesForChatConversation(getMessageDto: GetMessageDto!): [ChatMessage!]! @deprecated(reason: "This query has now been deprecated, please use getChatConversationMessages")
   getChatConversationMessages(getMessageDto: GetMessageDto!): PaginatedChatMessages!
+  searchMessagesByTags(tags: [String!]!): [ChatMessage!]!
   conversationInboxDoNotUse: [ConversationInbox!]! @deprecated(reason: "Do not use query. See implementation for more details.")
 }
 
@@ -158,6 +160,8 @@ type Mutation {
   unlikeConversationMessage(likeMessageDto: LikeMessageDto!): ChatMessage!
   addReactionToMessage(reactionDto: ReactionDto!): ChatMessage!
   removeReactionFromMessage(reactionDto: ReactionDto!): ChatMessage!
+  addTagsToMessage(input: TagsDto!): ChatMessage!
+  updateTagsOnMessage(input: TagsDto!): ChatMessage!
   addVote(option: String!, chatMessageId: ObjectId!): Poll!
   removeVote(option: String!, chatMessageId: ObjectId!): Poll!
 }
@@ -246,4 +250,10 @@ input ReactionDto {
   reactionUnicode: String!
   messageId: ObjectId!
   conversationId: ObjectId!
+}
+
+input TagsDto {
+  messageId: ObjectId!
+  conversationId: ObjectId!
+  tags: [String!]
 }

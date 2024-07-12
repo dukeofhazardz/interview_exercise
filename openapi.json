@@ -681,7 +681,9 @@
                             "deleteMessage",
                             "resolveMessage",
                             "pinMessage",
-                            "createPoll"
+                            "createPoll",
+                            "addTags",
+                            "updateTags"
                         ],
                         "type": "string"
                     },
@@ -979,6 +981,12 @@
                     },
                     "isSenderBlocked": {
                         "type": "boolean"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     }
                 },
                 "required": [
@@ -989,7 +997,8 @@
                     "deleted",
                     "resolved",
                     "likes",
-                    "likesCount"
+                    "likesCount",
+                    "tags"
                 ]
             },
             "ChatConversation": {

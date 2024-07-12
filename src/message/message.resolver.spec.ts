@@ -12,6 +12,7 @@ import {
   LikeMessageDto,
   ReactionDto,
   PollDto,
+  TagsDto,
 } from './models/message.dto';
 import { ObjectID } from 'mongodb';
 import { IAuthenticatedUser } from '../authentication/jwt.strategy';
@@ -48,6 +49,7 @@ const chatMessage: ChatMessage = {
   resolved: false,
   likes: [],
   likesCount: 0,
+  tags: [],
 };
 
 describe('MessageResolver', () => {
@@ -132,6 +134,7 @@ describe('MessageResolver', () => {
             id,
             text: 'a chat message',
             sender: { id: senderId.toHexString() },
+            tags: [],
           },
         ];
       }
@@ -147,6 +150,7 @@ describe('MessageResolver', () => {
             text: 'a chat message',
             sender: { id: senderId.toHexString() },
             richContent: {},
+            tags: [],
           },
         ];
       }
@@ -166,6 +170,7 @@ describe('MessageResolver', () => {
                 id: replyMessageId,
               },
             },
+            tags: [],
           },
         ];
       }
@@ -194,6 +199,27 @@ describe('MessageResolver', () => {
       messagesFilterInput: MessagesFilterInput,
     ): Promise<MessageGroupedByConversationOutput[]> {
       return Promise.resolve([]);
+    }
+
+    addTagsToMessage(
+      tagInput: TagsDto,
+      authenticatedUser?: IAuthenticatedUser,
+    ): Promise<ChatMessage> {
+      return Promise.resolve(chatMessage);
+    }
+
+    updateTagsOnMessage(
+      tagInput: TagsDto,
+      authenticatedUser?: IAuthenticatedUser,
+    ): Promise<ChatMessage> {
+      return Promise.resolve(chatMessage);
+    }
+
+    searchMessagesByTags(
+      tagInput: string[],
+      authenticatedUser?: IAuthenticatedUser,
+    ): Promise<ChatMessage[]> {
+      return Promise.resolve([chatMessage]);
     }
   }
 
@@ -303,6 +329,7 @@ describe('MessageResolver', () => {
           likesCount: 0,
           sender: { id: senderId.toHexString() },
           text: 'a chat message',
+          tags: [],
         },
       ]);
     });
@@ -334,6 +361,7 @@ describe('MessageResolver', () => {
           richContent: {},
           sender: { id: senderId.toHexString() },
           text: 'a chat message',
+          tags: [],
         },
       ]);
     });
@@ -369,6 +397,7 @@ describe('MessageResolver', () => {
           },
           sender: { id: senderId.toHexString() },
           text: 'a reply message',
+          tags: [],
         },
       ]);
     });
@@ -561,6 +590,70 @@ describe('MessageResolver', () => {
         },
         { accountRole: 'admin', userId },
       );
+    });
+  });
+
+  describe('tags', () => {
+    it('tag methods should be defined', () => {
+      expect(messageLogic.addTagsToMessage).toBeDefined();
+      expect(messageLogic.updateTagsOnMessage).toBeDefined();
+      expect(messageLogic.searchMessagesByTags).toBeDefined();
+    });
+
+    it('should add tags to a message', () => {
+      jest.spyOn(messageLogic, 'addTagsToMessage');
+
+      const tagsDto: TagsDto = {
+        messageId,
+        conversationId,
+        tags: ['music'],
+      };
+
+      resolver.addTagsToMessage(tagsDto, authenticatedUser);
+      expect(messageLogic.addTagsToMessage).toBeCalledWith(
+        tagsDto,
+        {
+          accountRole: 'admin',
+          userId,
+        },
+      );
+      expect(messageLogic.addTagsToMessage).toBeCalledTimes(1);
+    });
+
+    it('update the tags on a message', () => {
+      jest.spyOn(messageLogic, 'updateTagsOnMessage');
+
+      const tagsDto: TagsDto = {
+        messageId,
+        conversationId,
+        tags: ['music'],
+      };
+
+      resolver.updateTagsOnMessage(tagsDto, authenticatedUser);
+      expect(messageLogic.updateTagsOnMessage).toBeCalledWith(
+        tagsDto,
+        {
+          accountRole: 'admin',
+          userId,
+        },
+      );
+      expect(messageLogic.updateTagsOnMessage).toBeCalledTimes(1);
+    });
+
+    it('search for messages based on tag names', () => {
+      jest.spyOn(messageLogic, 'searchMessagesByTags');
+
+      const tag = ['music'];
+
+      resolver.searchMessagesByTags(tag, authenticatedUser);
+      expect(messageLogic.searchMessagesByTags).toBeCalledWith(
+        tag,
+        {
+          accountRole: 'admin',
+          userId,
+        },
+      );
+      expect(messageLogic.searchMessagesByTags).toBeCalledTimes(1);
     });
   });
 });

@@ -13,6 +13,7 @@ import {
   ResolveMessageDto,
   ReactionDto,
   PollOptionDto,
+  TagsDto,
 } from './models/message.dto';
 import { MessageData } from './message.data';
 import { IAuthenticatedUser } from '../authentication/jwt.strategy';
@@ -278,7 +279,6 @@ export class MessageLogic implements IMessageLogic {
     return blockedUsers.map((user) => user.blockedUserId);
   }
 
-
   async getChatConversationMessages(
     getMessageDto: GetMessageDto,
     authenticatedUser: IAuthenticatedUser,
@@ -313,7 +313,6 @@ export class MessageLogic implements IMessageLogic {
       paginatedChatMessages,
       blockedUserIds,
     );
-  
 
     return paginatedChatMessages;
   }
@@ -696,5 +695,49 @@ export class MessageLogic implements IMessageLogic {
     }
 
     return pollOption;
+  }
+
+  async addTagsToMessage(
+    input: TagsDto,
+    authenticatedUser: IAuthenticatedUser,
+  ): Promise<ChatMessage> {
+    await this.throwForbiddenErrorIfNotAuthorized(
+      authenticatedUser,
+      input.messageId,
+      Action.addTags,
+    );
+
+    const message = await this.messageData.addTagsToMessage(input);
+
+    return message;
+  }
+
+  async updateTagsOnMessage(
+    input: TagsDto,
+    authenticatedUser: IAuthenticatedUser,
+  ): Promise<ChatMessage> {
+    await this.throwForbiddenErrorIfNotAuthorized(
+      authenticatedUser,
+      input.messageId,
+      Action.updateTags,
+    );
+
+    const message = await this.messageData.updateTagsOnMessage(input);
+
+    return message;
+  }
+
+  async searchMessagesByTags(
+    tags: string[],
+    authenticatedUser: IAuthenticatedUser,
+  ): Promise<ChatMessage[]> {
+    if (!authenticatedUser) {
+      throw new Error('User not authenticated');
+    }
+
+    // Search for messages by tags using the messageData service
+    const messages = await this.messageData.searchMessagesByTags(tags);
+
+    return messages;
   }
 }

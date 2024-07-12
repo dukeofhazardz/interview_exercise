@@ -153,6 +153,9 @@ export class ChatMessageModel {
     nullable: true,
   })
   reactions?: Reaction[];
+  
+  @Prop({ type: [String], default: [] })
+  tags: string[];
 
   /**
    * All the properties below are virtual properties

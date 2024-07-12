@@ -8,6 +8,7 @@ import {
   GifType,
   MessageDto,
   PollDto,
+  TagsDto,
 } from './models/message.dto';
 import {
   ConversationChannel,
@@ -132,6 +133,7 @@ const replyMessageModel: ChatMessageModel = {
   resolved: false,
   likes: [],
   likesCount: 0,
+  tags: [],
 };
 
 const USER_BLOCK_DTO = {
@@ -149,7 +151,24 @@ describe('MessageLogic', () => {
   let safeguardingService: SafeguardingService;
   let permissionsService: PermissionsService;
 
-  const mockCreatedMessage = {
+  interface IMessage {
+    _id: ObjectID;
+    text: string;
+    senderId: ObjectID;
+    conversationId: ObjectID;
+    created: Date;
+    sender: { id: string };
+    conversation: { id: string };
+    id: ObjectID;
+    deleted: boolean;
+    resolved: boolean;
+    likes: ObjectID[];
+    likesCount: number;
+    tags: string[];
+  }
+  // Added IMessage interface to avoid type errors
+
+  const mockCreatedMessage: IMessage = {
     _id: messageId,
     text: 'Message 1',
     senderId,
@@ -162,7 +181,41 @@ describe('MessageLogic', () => {
     resolved: false,
     likes: [],
     likesCount: 0,
+    tags: [],
   };
+
+  const mockMessagesList: IMessage[] = [
+    {
+      _id: messageId,
+      text: 'Message 1',
+      senderId,
+      conversationId,
+      created: new Date('2018-05-11T17:47:40.893Z'),
+      sender: { id: '5fe0cce861c8ea54018385af' },
+      conversation: { id: '5fe0cce861c8ea54018385ae' },
+      id: messageId,
+      deleted: false,
+      resolved: false,
+      likes: [],
+      likesCount: 0,
+      tags: ['hero'],
+    },
+    {
+      _id: new ObjectID(),
+      text: 'Message 2',
+      senderId,
+      conversationId,
+      created: new Date('2018-05-12T17:47:40.893Z'),
+      sender: { id: '5fe0cce861c8ea54018389af' },
+      conversation: { id: '5fe0cce861c8ea54018395ae' },
+      id: messageId,
+      deleted: false,
+      resolved: false,
+      likes: [],
+      likesCount: 0,
+      tags: ['champion'],
+    },
+  ];
 
   const mockGifMessage = {
     ...mockCreatedMessage,
@@ -338,6 +391,7 @@ describe('MessageLogic', () => {
           likes: [],
           likesCount: 0,
           isSenderBlocked: false,
+          tags: [],
         },
 
         {
@@ -354,6 +408,7 @@ describe('MessageLogic', () => {
           likes: [],
           likesCount: 0,
           isSenderBlocked: false,
+          tags: [],
         },
       ];
 
@@ -411,6 +466,24 @@ describe('MessageLogic', () => {
     removeVote(messageId: ObjectID, userId: ObjectID, option: string) {
       return Promise.resolve(
         this.getMockMessage(messageId.toHexString(), userId.toHexString()),
+      );
+    }
+
+    async addTagsToMessage(tagInput: TagsDto) {
+      mockCreatedMessage.tags.push(...tagInput.tags);
+      return mockCreatedMessage;
+    }
+
+    async updateTagsOnMessage(tagInput: TagsDto) {
+      return {
+        ...mockCreatedMessage,
+        tags: tagInput.tags,
+      };
+    }
+
+    async searchMessagesByTags(tags: string[]): Promise<MessageDto[]> {
+      return mockMessagesList.filter(message =>
+        message.tags.some(tag => tags.includes(tag)),
       );
     }
   }
@@ -549,7 +622,6 @@ describe('MessageLogic', () => {
   class MockConversationChannel {
     send = jest.fn();
   }
-
 
   class MockUserBlocksLogic implements IUserBlocksLogic {
     getBlockedUsers(
@@ -1444,6 +1516,106 @@ describe('MessageLogic', () => {
       await expect(
         messageLogic.removeVote(messageId, option, validUser),
       ).rejects.toEqual(expectedError);
+    });
+  });
+
+  describe('tags', () => {
+    it('should add tags to a message', async () => {
+      const message = await messageData.create(
+        { conversationId, text: 'Message to tag' },
+        senderId,
+      );
+      const newTag: TagsDto = {
+        messageId: message.id,
+        conversationId: message.conversationId,
+        tags: ['hero'],
+      }
+
+      jest.spyOn(messageData, 'addTagsToMessage');
+      await messageLogic.addTagsToMessage(newTag, validUser);
+
+      expect(messageData.addTagsToMessage).toHaveBeenCalledWith(
+        newTag
+      );
+
+      expect(messageData.addTagsToMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it('should update tags on a message', async () => {
+      const message = await messageData.create(
+        { conversationId, text: 'Message to tag' },
+        senderId,
+      );
+      const newTag: TagsDto = {
+        messageId: message.id,
+        conversationId: message.conversationId,
+        tags: ['hero'],
+      }
+      jest.spyOn(messageData, 'addTagsToMessage');
+      await messageLogic.addTagsToMessage(newTag, validUser);
+
+      const updatedTag: TagsDto = {
+        messageId: message.id,
+        conversationId: message.conversationId,
+        tags: ['champion'],
+      }
+      jest.spyOn(messageData, 'updateTagsOnMessage');
+      await messageLogic.updateTagsOnMessage(updatedTag, validUser);
+
+      expect(messageData.addTagsToMessage).toHaveBeenCalledWith(
+        newTag
+      );
+      expect(messageData.updateTagsOnMessage).toHaveBeenCalledWith(
+        updatedTag
+      );
+
+      expect(messageData.addTagsToMessage).toHaveBeenCalledTimes(1);
+      expect(messageData.updateTagsOnMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it('should search for messages based on specific tags', async () => {
+      const firstMessage = await messageData.create(
+        { conversationId: new ObjectID(), text: 'First message to tag' },
+        senderId,
+      );
+      const secondMessage = await messageData.create(
+        { conversationId: new ObjectID(), text: 'Second Message to tag' },
+        senderId,
+      );
+      const firstTag: TagsDto = {
+        messageId: firstMessage.id,
+        conversationId: firstMessage.conversationId,
+        tags: ['hero'],
+      }
+
+      const secondTag: TagsDto = {
+        messageId: secondMessage.id,
+        conversationId: secondMessage.conversationId,
+        tags: ['champion'],
+      }
+      jest.spyOn(messageData, 'addTagsToMessage');
+      await messageLogic.addTagsToMessage(firstTag, validUser);
+      expect(messageData.addTagsToMessage).toHaveBeenCalledWith(
+        firstTag
+      );
+
+      await messageLogic.addTagsToMessage(secondTag, validUser);
+      expect(messageData.addTagsToMessage).toHaveBeenCalledWith(
+        secondTag
+      );
+      expect(messageData.addTagsToMessage).toHaveBeenCalledTimes(2);
+
+      jest.spyOn(messageData, 'searchMessagesByTags');
+      await messageLogic.searchMessagesByTags(['hero'], validUser);
+      expect(messageData.searchMessagesByTags).toHaveBeenCalledWith(
+        ['hero']
+      );
+      await messageLogic.searchMessagesByTags(['champion'], validUser);
+      expect(messageData.searchMessagesByTags).toHaveBeenCalledWith(
+        ['champion']
+      );
+
+      expect(messageData.searchMessagesByTags).toHaveBeenCalledTimes(2);
     });
   });
 });

@@ -7,7 +7,7 @@ import {
   ChatMessageModel,
 } from './models/message.model';
 import { ChatMessage, PaginatedChatMessages } from './models/message.entity';
-import { MessageDto, GetMessageDto } from './models/message.dto';
+import { MessageDto, GetMessageDto, TagsDto } from './models/message.dto';
 import { ObjectID } from 'mongodb';
 import { createRichContent } from './utils/message.helper';
 import { MessageGroupedByConversationOutput } from '../conversation/models/messagesFilterInput';
@@ -29,6 +29,7 @@ export class MessageData {
     chatMessage.conversationId = data.conversationId;
     chatMessage.created = new Date();
     chatMessage.deleted = false;
+    chatMessage.tags = [];
 
     createRichContent(data, chatMessage);
 
@@ -364,5 +365,26 @@ export class MessageData {
     }
 
     return chatMessageToObject(updatedResult);
+  }
+
+  async addTagsToMessage(input: TagsDto): Promise<ChatMessage> {
+    const message = await this.chatMessageModel.findById(input.messageId);
+    if (!message) throw new Error('Message not found');
+    message.tags.push(...input.tags);
+    await message.save();
+    return message.toObject();
+  }
+
+  async updateTagsOnMessage(input: TagsDto): Promise<ChatMessage> {
+    const message = await this.chatMessageModel.findById(input.messageId);
+    if (!message) throw new Error('Message not found');
+    message.tags = input.tags;
+    await message.save();
+    return message.toObject();
+  }
+
+  async searchMessagesByTags(tags: string[]): Promise<ChatMessage[]> {
+    const messages = await this.chatMessageModel.find({ tags: { $in: tags } });
+    return messages.map(message => message.toObject());
   }
 }
